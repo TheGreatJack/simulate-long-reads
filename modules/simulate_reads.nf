@@ -1,4 +1,5 @@
 process badread_simulate {
+    /* /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */ */
 
     tag { assembly_id + ' / ' + fold_coverage + 'x' + ' / ' + 'replicate=' + replicate }
 
@@ -144,7 +145,7 @@ process introduce_contaminants {
 }
 
 process fastp {
-
+    /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */
     tag { assembly_id + '-' + md5_fragment }
     
     publishDir "${params.outdir}/${output_subdir}", pattern: "${assembly_id}-${md5_fragment}_RL.fastq.gz", mode: 'copy'
@@ -174,7 +175,7 @@ process fastp {
 }
 
 process minimap2_align {
-
+    /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */
     tag { assembly_id + '-' + md5_fragment + ' / ' + assembly_id }
     
     publishDir "${params.outdir}/${output_subdir}", pattern: "${assembly_id}-${md5_fragment}.{bam,bam.bai}", mode: 'copy', enabled: params.keep_bams
@@ -198,7 +199,7 @@ process minimap2_align {
 }
 
 process qualimap_bamqc {
-
+    /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */
     tag { assembly_id + '-' + md5_fragment }
     
     publishDir "${params.outdir}/${output_subdir}", mode: 'copy', pattern: "${assembly_id}-${md5_fragment}_bamqc"
@@ -227,7 +228,7 @@ process qualimap_bamqc {
 
 
 process samtools_stats {
-
+    /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */
     tag { assembly_id + '-' + md5_fragment }
 
     publishDir "${params.outdir}/${output_subdir}", mode: 'copy', pattern: "${assembly_id}-${md5_fragment}_samtools_stats*"
@@ -263,7 +264,7 @@ process samtools_stats {
 
 
 process combine_alignment_qc {
-
+    /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */
     tag { assembly_id + '-' + md5_fragment }
 
     publishDir "${params.outdir}/${output_subdir}", mode: 'copy', pattern: "${assembly_id}-${md5_fragment}_combined_alignment_qc.csv"
@@ -307,4 +308,46 @@ process mosdepth {
     gunzip ${assembly_id}-${md5_fragment}_by_${depth_by}.regions.bed.gz
     mv ${assembly_id}-${md5_fragment}_by_${depth_by}.regions.bed ${assembly_id}-${md5_fragment}_by_${depth_by}.mosdepth.regions.bed
     """
+}
+
+process combine_reads {
+
+    tag { assembly_id + '-' + md5_fragment }
+    
+    publishDir "${params.outdir}/${output_subdir}", pattern: "${assembly_id}-${md5_fragment}_union_RL.fastq", mode: 'copy'
+
+    input:
+    tuple val(assembly_id), val(md5_fragment), path(reads_1)
+    tuple val(assembly_id_2), val(md5_fragment_2), path(reads_2)
+    output:
+    tuple val(assembly_id), val(md5_fragment), path("${assembly_id}-${md5_fragment}_union_RL.fastq"), emit: untrimmed_reads
+
+    script:
+    output_subdir = params.flat ? '' : assembly_id + '-' + md5_fragment
+    
+    """
+    cat ${reads_1} ${reads_2} > ${assembly_id}-${md5_fragment}_union_RL.fastq
+    """
+}
+
+process combine_nuc_mito {
+
+    tag { assembly_id + '-' + md5_fragment }
+    
+    publishDir "${params.outdir}/${output_subdir}", pattern: "${assembly_id}-${md5_fragment}_nuc_mito_ref.fasta", mode: 'copy'
+
+    input:
+    tuple val(assembly_id), path(nuclear_ref)
+    tuple val(assembly_id_2), path(mito_ref)
+    val md5_fragment
+    output:
+    tuple val(assembly_id), val(md5_fragment), path("${assembly_id}-${md5_fragment}_nuc_mito_ref.fasta"), emit: combined_ref_fasta
+
+    script:
+    output_subdir = params.flat ? '' : assembly_id + '-' + md5_fragment
+    
+    """
+    cat ${nuclear_ref} ${mito_ref} > ${assembly_id}-${md5_fragment}_nuc_mito_ref.fasta
+    """
+
 }
