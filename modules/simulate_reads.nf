@@ -1,5 +1,5 @@
 process badread_simulate {
-    /* /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */ */
+    /* conda '/home/labcompjavier/miniconda3/envs/simulate-long-reads' */
 
     tag { assembly_id + ' / ' + fold_coverage + 'x' + ' / ' + 'replicate=' + replicate }
 
